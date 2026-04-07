@@ -468,8 +468,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mObserverBehaviour: {fileID: 712698824}
   mHiddenRoot: {fileID: 0}
-  mTargetName: green-goblin-target
-  mDatasetName: Vuforia/QuestVuforiaTargets.xml
+  mTargetName: uno
+  mDatasetName: Vuforia/unity-quest.xml
   mCastedBehaviour: {fileID: 712698824}
   mMeshFilter: {fileID: 0}
   mMeshRenderer: {fileID: 0}
@@ -532,13 +532,13 @@ MonoBehaviour:
   PreviewVisible: 1
   RuntimeOcclusion: 0
   RuntimeCollider: 0
-  mTrackableName: green-goblin-target
+  mTrackableName: uno
   mInitializedInEditor: 1
-  mDataSetPath: Vuforia/QuestVuforiaTargets.xml
-  mAspectRatio: 1.4094429
+  mDataSetPath: Vuforia/unity-quest.xml
+  mAspectRatio: 1.2428715
   mImageTargetType: 0
-  mWidth: 0.149
-  mHeight: 0.210007
+  mWidth: 0.07
+  mHeight: 0.087001
   mRuntimeTexture: {fileID: 0}
   mMotionHint: 1
   mTrackingOptimization: 0

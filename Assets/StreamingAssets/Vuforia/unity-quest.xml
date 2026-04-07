@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig>
+  <Tracking>
+    <ImageTarget name="uno" size="0.070000 0.087001" />
+    <ImageTarget name="postkarte_warped" size="0.145000 0.097768" />
+    <ImageTarget name="Postkarte_korrekt" size="0.148000 0.099013" />
+    <ImageTarget name="postkarte" size="0.105000 0.070245" />
+  </Tracking>
+</QCARConfig>
