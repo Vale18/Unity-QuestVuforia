@@ -19,7 +19,7 @@ echo -e "${GREEN}=====================================${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/build"
 UNITY_PLUGINS_DIR="$SCRIPT_DIR/../Assets/Plugins/Android/libs/arm64-v8a"
-NDK_PATH="/Applications/Unity/Hub/Editor/6000.0.61f1/PlaybackEngines/AndroidPlayer/NDK"
+NDK_PATH="C:\Program Files\Unity\Hub\Editor\6000.0.61f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK"
 
 # Check NDK exists
 if [ ! -d "$NDK_PATH" ]; then
@@ -41,24 +41,23 @@ cd "$BUILD_DIR"
 
 # Configure CMake
 echo -e "${YELLOW}Configuring CMake for arm64-v8a...${NC}"
-cmake \
+cmake .. \
+  -G "Ninja" \
   -DCMAKE_TOOLCHAIN_FILE="$NDK_PATH/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_PLATFORM=android-29 \
   -DCMAKE_BUILD_TYPE=Release \
-  -DANDROID_STL=c++_static \
-  ..
+  -DANDROID_STL=c++_shared \
 
 # Build
 echo -e "${YELLOW}Building libquforia.so...${NC}"
-cmake --build . --config Release -j8
+cmake  --build . --config Release  -j8
 
 # Check if library was built
 if [ ! -f "$BUILD_DIR/libquforia.so" ]; then
     echo -e "${RED}ERROR: libquforia.so not found after build${NC}"
     exit 1
 fi
-
 # Get library size
 LIB_SIZE=$(du -h "$BUILD_DIR/libquforia.so" | awk '{print $1}')
 echo -e "${GREEN}✓ libquforia.so built successfully ($LIB_SIZE)${NC}"

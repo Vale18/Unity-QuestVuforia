@@ -25,6 +25,9 @@ add_library(quforia SHARED
 target_link_libraries(quforia
     android
     log
+    atomic
+    m
+    c++_shared
 )
 
 # Compiler flags
