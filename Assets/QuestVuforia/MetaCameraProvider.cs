@@ -18,7 +18,7 @@ public class MetaCameraProvider : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool flipImageVertically = true;
-    [SerializeField] private bool useCameraRotation = false;
+    [SerializeField] private bool useCameraRotation = true;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = false;
@@ -92,8 +92,8 @@ public class MetaCameraProvider : MonoBehaviour
         Log($"Camera initialized: Current={width}x{height}, Sensor={sensorRes.x}x{sensorRes.y}");
         if (width != sensorRes.x || height != sensorRes.y)
         {
-            Debug.LogWarning($"[Quforia] CurrentResolution ({width}x{height}) != SensorResolution ({sensorRes.x}x{sensorRes.y}). " +
-                           "Image may be cropped/scaled. This can cause tracking offset!");
+            Log($"CurrentResolution ({width}x{height}) is a crop of SensorResolution ({sensorRes.x}x{sensorRes.y}); " +
+                "crop offset is accounted for in SetupCameraIntrinsics().");
         }
 
         // Setup intrinsics
@@ -109,27 +109,52 @@ public class MetaCameraProvider : MonoBehaviour
         try
         {
             var intrinsics = cameraAccess.Intrinsics;
-
-            // The intrinsics from Meta are calibrated to SensorResolution
-            // But we're feeding CurrentResolution to Vuforia
-            // We need to scale the intrinsics if there's a resolution mismatch
             var sensorRes = intrinsics.SensorResolution;
-            float scaleX = (float)width / sensorRes.x;
-            float scaleY = (float)height / sensorRes.y;
+
+            // Meta's intrinsics (FocalLength, PrincipalPoint) are expressed in the SENSOR frame
+            // (e.g. 1280x1280), NOT the current output resolution. The current resolution is a
+            // centered CROP of the sensor (and possibly a further scale), exactly as defined by
+            // Meta's PassthroughCameraAccess.CalcSensorCropRegion(). For 1280x960 from a 1280x1280
+            // sensor this means: full width, top/bottom 160px cropped, NO vertical downscale.
+            //
+            // Therefore the focal length must NOT be scaled by height/sensorHeight (a crop does not
+            // change pixels-per-radian). We mirror Meta's crop model to derive correct intrinsics:
+            float sfX = (float)width / sensorRes.x;
+            float sfY = (float)height / sensorRes.y;
+            float norm = Mathf.Max(sfX, sfY);
+            float cropScaleX = sfX / norm;
+            float cropScaleY = sfY / norm;
+            float cropOffsetX = sensorRes.x * (1f - cropScaleX) * 0.5f;
+            float cropOffsetY = sensorRes.y * (1f - cropScaleY) * 0.5f;
+            float cropWidth = sensorRes.x * cropScaleX;
+            float s = width / cropWidth;   // crop-region -> output scale (== height/cropHeight)
+
+            float fx = intrinsics.FocalLength.x * s;
+            float fy = intrinsics.FocalLength.y * s;                       // NOT * (height/sensorHeight)
+            float cx = (intrinsics.PrincipalPoint.x - cropOffsetX) * s;
+            float cyImg = (intrinsics.PrincipalPoint.y - cropOffsetY) * s; // cy in output (unflipped) frame
 
             cachedIntrinsics = new float[14];
-            cachedIntrinsics[0] = width;  // Use actual frame width
-            cachedIntrinsics[1] = height; // Use actual frame height
-            cachedIntrinsics[2] = intrinsics.FocalLength.x * scaleX;  // Scale focal length
-            cachedIntrinsics[3] = intrinsics.FocalLength.y * scaleY;
-            cachedIntrinsics[4] = intrinsics.PrincipalPoint.x * scaleX;  // Scale principal point
-            cachedIntrinsics[5] = intrinsics.PrincipalPoint.y * scaleY;
-            // Distortion coefficients (6-13) remain 0 (Meta doesn't provide them)
+            cachedIntrinsics[0] = width;
+            cachedIntrinsics[1] = height;
+            cachedIntrinsics[2] = fx;
+            cachedIntrinsics[3] = fy;
+            cachedIntrinsics[4] = cx;
+            // When the pixel buffer is flipped vertically (required for Vuforia detection),
+            // the principal point must be flipped to match: cy_flipped = height - cyImg.
+            cachedIntrinsics[5] = flipImageVertically ? (height - cyImg) : cyImg;
+
+            // Single-line logs: Unity's Android logging drops everything after embedded '\n',
+            // so multi-line Debug.Log calls show an empty body in logcat.
+            Debug.Log($"[Quforia] RAW Meta: sensor={sensorRes.x}x{sensorRes.y} cur={width}x{height} " +
+                $"f=({intrinsics.FocalLength.x:F1},{intrinsics.FocalLength.y:F1}) " +
+                $"pp=({intrinsics.PrincipalPoint.x:F1},{intrinsics.PrincipalPoint.y:F1})");
 
             QuestVuforiaBridge.SetCameraIntrinsics(cachedIntrinsics);
-            Log($"Intrinsics scaled: {width}x{height} (from {sensorRes.x}x{sensorRes.y}), " +
-                $"fx={cachedIntrinsics[2]:F1}, fy={cachedIntrinsics[3]:F1}, " +
-                $"cx={cachedIntrinsics[4]:F1}, cy={cachedIntrinsics[5]:F1}");
+
+            Debug.Log($"[Quforia] Vuforia intr: fx={fx:F1} fy={fy:F1} cx={cx:F1} cy={cachedIntrinsics[5]:F1} " +
+                $"cropOff=({cropOffsetX:F0},{cropOffsetY:F0}) s={s:F3} flip={flipImageVertically} " +
+                $"(expect fy~=fx, cy~={height * 0.5f:F0})");
         }
         catch (Exception e)
         {
