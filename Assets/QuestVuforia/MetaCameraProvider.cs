@@ -155,6 +155,17 @@ public class MetaCameraProvider : MonoBehaviour
             Debug.Log($"[Quforia] Vuforia intr: fx={fx:F1} fy={fy:F1} cx={cx:F1} cy={cachedIntrinsics[5]:F1} " +
                 $"cropOff=({cropOffsetX:F0},{cropOffsetY:F0}) s={s:F3} flip={flipImageVertically} " +
                 $"(expect fy~=fx, cy~={height * 0.5f:F0})");
+
+            // DIAGNOSTIC: physical passthrough camera pose relative to the head node.
+            // The Quest passthrough camera is mounted/tilted away from the eye. If this
+            // rotation (esp. pitch around X) is non-trivial, and Vuforia places targets
+            // relative to the EYE anchor (not this camera), it produces a distance-growing
+            // angular offset -> block floats above the target.
+            var lensOffset = intrinsics.LensOffset;
+            Vector3 loEul = lensOffset.rotation.eulerAngles;
+            Debug.Log($"[Quforia] LensOffset (camera vs head): " +
+                $"pos=({lensOffset.position.x:F3},{lensOffset.position.y:F3},{lensOffset.position.z:F3}) " +
+                $"eul=({loEul.x:F1},{loEul.y:F1},{loEul.z:F1})");
         }
         catch (Exception e)
         {
@@ -229,9 +240,18 @@ public class MetaCameraProvider : MonoBehaviour
         // Debug pose info
         if (showPoseDebug && frameCount % 30 == 0)
         {
-            Debug.Log($"[Quforia] Camera Pose: pos=({cameraPose.position.x:F3}, {cameraPose.position.y:F3}, {cameraPose.position.z:F3}), " +
-                     $"rot=({cameraPose.rotation.x:F3}, {cameraPose.rotation.y:F3}, {cameraPose.rotation.z:F3}, {cameraPose.rotation.w:F3}), " +
-                     $"useCameraRotation={useCameraRotation}");
+            // This component sits on the LeftEyeAnchor, which is ALSO the Vuforia AR camera
+            // (WorldCenterMode=CAMERA). Compare the physical passthrough camera pose against
+            // this eye/AR-camera transform: the delta is the camera->eye extrinsic that
+            // Vuforia does NOT account for. A non-trivial rotation delta (pitch) is the
+            // suspected cause of the distance-growing "floats above" offset.
+            Quaternion deltaRot = Quaternion.Inverse(transform.rotation) * cameraPose.rotation;
+            Vector3 deltaEul = deltaRot.eulerAngles;
+            float deltaPos = Vector3.Distance(transform.position, cameraPose.position);
+            Debug.Log($"[Quforia] CAM vs EYE: " +
+                     $"camPos=({cameraPose.position.x:F3},{cameraPose.position.y:F3},{cameraPose.position.z:F3}) " +
+                     $"eyePos=({transform.position.x:F3},{transform.position.y:F3},{transform.position.z:F3}) " +
+                     $"deltaPos={deltaPos:F3}m deltaRotEul=({deltaEul.x:F1},{deltaEul.y:F1},{deltaEul.z:F1})");
         }
 
         // Feed to Vuforia (pose first, then frame with same timestamp)
