@@ -71,7 +71,6 @@ bool QuestExternalCamera::close() {
     LOGI("close()");
 
     if (!isOpen_) {
-        LOGD("Camera already closed");
         return true;
     }
 
@@ -136,7 +135,6 @@ bool QuestExternalCamera::stop() {
     LOGI("stop()");
 
     if (!isRunning_) {
-        LOGD("Camera not running");
         return true;
     }
 
@@ -173,9 +171,6 @@ bool QuestExternalCamera::getSupportedCameraMode(uint32_t index,
     cameraMode->height = 960;
     cameraMode->fps = 30;
     cameraMode->format = VuforiaDriver::PixelFormat::RGB888;
-
-    LOGD("getSupportedCameraMode(%u): %ux%u@%ufps",
-         index, cameraMode->width, cameraMode->height, cameraMode->fps);
     return true;
 }
 
@@ -199,7 +194,6 @@ bool QuestExternalCamera::setExposureMode(VuforiaDriver::ExposureMode mode) {
     }
 
     exposureMode_ = mode;
-    LOGD("Exposure mode set to: %d", mode);
     return true;
 }
 
@@ -223,7 +217,6 @@ bool QuestExternalCamera::setFocusMode(VuforiaDriver::FocusMode mode) {
     }
 
     focusMode_ = mode;
-    LOGD("Focus mode set to: %d", mode);
     return true;
 }
 
@@ -319,13 +312,8 @@ void QuestExternalCamera::frameDeliveryThread() {
             callback_->onNewCameraFrame(&vuforiaFrame);
 
             frameCount++;
-            if (frameCount % 30 == 0) {
-                LOGD("Delivered %d frames (latest timestamp: %lld)",
-                     frameCount, (long long)frameData->timestamp);
-            }
         } else {
             // No frame available, wait a bit
-            LOGD("No frame available from driver");
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 

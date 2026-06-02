@@ -119,11 +119,21 @@ QuestVuforiaDriver::~QuestVuforiaDriver() {
 }
 
 uint32_t QuestVuforiaDriver::getCapabilities() {
-    // Report that this driver provides:
-    // - Camera images (CAMERA_IMAGE)
-    // - Device pose (CAMERA_POSE)
+    // 1 = image-only tracking (no device pose fusion). This is the WORKING config:
+    // placement is correct because Vuforia is anchored to the physical camera pose via
+    // VuforiaCameraPoseDriver (GetCameraPose), used directly and exactly. Enabling the
+    // device pose tracker (0) routes the pose through the external_tracker.cpp CV
+    // transform, whose residual convention error reintroduces an offset. Keep at 1
+    // unless that CV pose transform is fully corrected.
+    #define DEBUG_DISABLE_POSE_TRACKER 1
+
+    #if DEBUG_DISABLE_POSE_TRACKER
+    uint32_t capabilities = (1 << VuforiaDriver::CAMERA_IMAGE);
+    LOGI("getCapabilities() POSE TRACKER DISABLED for debugging");
+    #else
     uint32_t capabilities = (1 << VuforiaDriver::CAMERA_IMAGE) |
                            (1 << VuforiaDriver::CAMERA_POSE);
+    #endif
 
     LOGI("getCapabilities() returning: 0x%X", capabilities);
     return capabilities;
@@ -238,9 +248,6 @@ void QuestVuforiaDriver::feedCameraFrame(const uint8_t* imageData, int width, in
     while (frameQueue_.size() > MAX_FRAME_QUEUE_SIZE) {
         frameQueue_.pop();
     }
-
-    LOGD("Frame fed: %dx%d, timestamp=%lld, queue_size=%zu",
-         width, height, (long long)timestamp, frameQueue_.size());
 }
 
 void QuestVuforiaDriver::feedDevicePose(const float* position, const float* rotation,
@@ -268,10 +275,6 @@ void QuestVuforiaDriver::feedDevicePose(const float* position, const float* rota
     while (poseQueue_.size() > MAX_POSE_QUEUE_SIZE) {
         poseQueue_.pop();
     }
-
-    LOGD("Pose fed: pos(%.3f,%.3f,%.3f), timestamp=%lld, queue_size=%zu",
-         poseData->position[0], poseData->position[1], poseData->position[2],
-         (long long)timestamp, poseQueue_.size());
 }
 
 void QuestVuforiaDriver::setCameraIntrinsics(const float* intrinsics) {
@@ -324,7 +327,6 @@ std::shared_ptr<PoseData> QuestVuforiaDriver::acquirePoseForTimestamp(int64_t ti
     std::lock_guard<std::mutex> lock(poseMutex_);
 
     if (poseQueue_.empty()) {
-        LOGD("Pose queue is empty");
         return nullptr;
     }
 
@@ -348,12 +350,8 @@ std::shared_ptr<PoseData> QuestVuforiaDriver::acquirePoseForTimestamp(int64_t ti
     }
 
     if (closestPose && minTimeDiff < 50000000) {  // Within 50ms
-        LOGD("Found pose for timestamp %lld (diff=%lld ns)",
-             (long long)timestamp, (long long)minTimeDiff);
         return closestPose;
     } else {
-        LOGD("No matching pose found for timestamp %lld (closest diff=%lld ns)",
-             (long long)timestamp, (long long)minTimeDiff);
         return nullptr;
     }
 }
