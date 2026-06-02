@@ -25,22 +25,15 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 - **Camera Pose Anchoring**: Target placement anchored to the physical passthrough camera pose (`GetCameraPose`), accounting for the camera-to-eye lens offset and tilt
 - **Real-time Processing**: Stable frame delivery and tracking updates
 
-### Resolved – Position Offset
-
-The previously observed offset (augmentation floating above/behind the target, growing with distance) is fixed. Two independent root causes were identified and corrected:
-
-1. **Camera intrinsics (crop vs. scale)**: the 1280×960 stream is a vertical *crop* of the 1280×1280 sensor, not a downscale, so the vertical focal length must **not** be scaled by `height/sensorHeight`. The intrinsics are now derived with Meta's crop model. Fixed in `MetaCameraProvider.SetupCameraIntrinsics`.
-2. **Camera-to-eye extrinsic**: Vuforia placed targets relative to the eye anchor, while the image originates from the physically offset and tilted passthrough camera (~11° pitch, ~7 cm). Fixed by anchoring the Vuforia AR camera to `GetCameraPose()` every frame via the new `VuforiaCameraPoseDriver` component.
 
 ### Known Limitations
 
 - **Device pose fusion disabled**: tracking runs image-only (`DEBUG_DISABLE_POSE_TRACKER = 1` in `vuforia_driver.cpp`). The external positional device tracker (`external_tracker.cpp`) is therefore **currently unused**. Its Unity→Vuforia coordinate transform still introduces a residual offset that must be corrected before pose fusion can be re-enabled (fusion would add pose prediction while the target is occluded).
 - No lens distortion is passed to Vuforia (Meta's intrinsics expose none); frame timestamps use the wall clock rather than the hardware capture time.
-
 ### In Development
 
-- **Model / Object Target Support**: planned; builds on the same camera-pose foundation
-
+- **Model Target Support**: Integration planned but not yet implemented
+- Vuforia key feature not working properly (add the key into "Assets\Resources\VuforiaConfiguration.asset")
 ## Setup
 
 - Clone this project.
@@ -59,7 +52,7 @@ The previously observed offset (augmentation floating above/behind the target, g
 - Modify the `Database` param within `ImageTargetBehaviour` component and look for your database.
 - Locate your Image Target in the dropdown below.
 - Run sample in your headset.
-
+- After the permission prompt restart the app to make the tracking work (only on first install)
 **Model Target Sample**
 
 _This is currently work in progress_
