@@ -22,10 +22,10 @@ QuestExternalCamera::QuestExternalCamera(QuestVuforiaDriver* driver)
 {
     LOGI("QuestExternalCamera constructor");
 
-    // Initialize default camera mode (1280x960 @ 30fps RGB888)
+    // Camera mode: 1280x1280 @ 60fps RGB888.
     currentMode_.width = 1280;
     currentMode_.height = 960;
-    currentMode_.fps = 30;
+    currentMode_.fps = 60;
     currentMode_.format = VuforiaDriver::PixelFormat::RGB888;
 }
 
@@ -169,7 +169,7 @@ bool QuestExternalCamera::getSupportedCameraMode(uint32_t index,
     // Return the single supported mode
     cameraMode->width = 1280;
     cameraMode->height = 960;
-    cameraMode->fps = 30;
+    cameraMode->fps = 60;
     cameraMode->format = VuforiaDriver::PixelFormat::RGB888;
     return true;
 }
