@@ -30,10 +30,10 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 
 - **Device pose fusion disabled**: tracking runs image-only (`DEBUG_DISABLE_POSE_TRACKER = 1` in `vuforia_driver.cpp`). The external positional device tracker (`external_tracker.cpp`) is therefore **currently unused**. Its Unity→Vuforia coordinate transform still introduces a residual offset that must be corrected before pose fusion can be re-enabled (fusion would add pose prediction while the target is occluded).
 - No lens distortion is passed to Vuforia (Meta's intrinsics expose none); frame timestamps use the wall clock rather than the hardware capture time.
+- Resolution limited to 1280x960 instead of 1280x1280. Vuforia Driver Framework doesn't call start() when feeding a square image
 ### In Development
 
 - **Model Target Support**: Integration planned but not yet implemented
-- Vuforia key feature not working properly (add the key into "Assets\Resources\VuforiaConfiguration.asset")
 ## Setup
 
 - Clone this project.
