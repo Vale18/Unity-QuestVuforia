@@ -238,12 +238,6 @@ void QuestExternalTracker::transformOpenXRToCV(const float* positionIn, const fl
     //   z' = qw*0 + qx*0 - qy*1 + qz*0 = -qy
     //   w' = qw*0 - qx*1 - qy*0 - qz*0 = -qx
     //
-    // NOTE: The mathematically correct basis change would be the similarity transform
-    // q' = q_x(180°) * q_unity * q_x(180°) = (-qx, qy, qz, -qw).
-    // However, Vuforia's PoseCoordSystem::CAMERA convention expects the rotation
-    // expressed with camera-local axes, meaning the POST-multiply form is what
-    // the framework actually requires here. Changing to the similarity transform
-    // broke tracking entirely in testing.
     float transformedQuat[4];
     transformedQuat[0] = qw;   // x' = qw
     transformedQuat[1] = qz;   // y' = +qz
