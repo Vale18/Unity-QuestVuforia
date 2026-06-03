@@ -513,13 +513,13 @@ MonoBehaviour:
   PreviewVisible: 1
   RuntimeOcclusion: 0
   RuntimeCollider: 0
-  mTrackableName: uno_scaled
+  mTrackableName: green-goblin-target
   mInitializedInEditor: 1
-  mDataSetPath: Vuforia/unity-quest.xml
-  mAspectRatio: 1.2608695
+  mDataSetPath: Vuforia/QuestVuforiaTargets.xml
+  mAspectRatio: 1.4094429
   mImageTargetType: 0
-  mWidth: 0.092
-  mHeight: 0.116
+  mWidth: 0.149
+  mHeight: 0.210007
   mRuntimeTexture: {fileID: 0}
   mMotionHint: 1
   mTrackingOptimization: 0
@@ -539,7 +539,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 543450652503012452}
-  - {fileID: 782511037}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &712698826
@@ -1938,7 +1937,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7454689584132748263, guid: c659432cd01b248dbaaa5aefd2fc4855, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
