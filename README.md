@@ -5,7 +5,7 @@
 An experimental Unity project integrating Vuforia Engine AR tracking with Meta Quest 3's passthrough cameras through a custom native driver implementation.
 
 ![Demo](/Media/image-target-demo.gif)
-
+![Update](/Media/image-tracking-correct.jpg)
 ## Overview
 
 Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system by implementing a custom C++ plugin using the Vuforia Driver Framework. This enables AR image tracking directly on Quest's passthrough view without requiring external devices.
@@ -38,8 +38,7 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 
 - Clone this project.
 - Make sure you have a [Vuforia License Key](https://developer.vuforia.com/home) (works with the free tier).
-- Go to Assets/StreamingAssets and create a copy of `VuforiaLicenseKey.text.template` and more the suffix `VuforiaLicenseKey.txt`.
-- Paste your license key in this new file. Now you should have a file named `VuforiaLicenseKey.txt` with the key pasted.
+- Go to Assets/Resources/VuforiaConfiguration.asset and add your license key
 
 ## Running Sample Scenes
 
@@ -51,9 +50,9 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 - Find the `GameObject` called `ImageTarget`.
 - Modify the `Database` param within `ImageTargetBehaviour` component and look for your database.
 - Locate your Image Target in the dropdown below.
-- Run sample in your headset.
+- Run sample in your headset. **Model Target Sample**
 - After the permission prompt restart the app to make the tracking work (only on first install)
-**Model Target Sample**
+
 
 _This is currently work in progress_
 
