@@ -4,30 +4,21 @@ using UnityEngine;
 /// <summary>
 /// Drives this GameObject's transform to the PHYSICAL passthrough camera world pose
 /// every frame (position + rotation, including the camera-to-head lens offset/tilt).
-/// 
-///
 /// Runs in LateUpdate (after OVR has updated the head/eye poses) so the camera pose
 /// for the current frame is current.
 /// </summary>
 [DefaultExecutionOrder(100)]
 public class VuforiaCameraPoseDriver : MonoBehaviour
 {
-    [Tooltip("The PassthroughCameraAccess that provides the camera image fed to Vuforia. " +
-             "Must be the SAME instance/eye that MetaCameraProvider uses.")]
-    [SerializeField] private PassthroughCameraAccess cameraAccess;
-
     [Header("Debug")]
     [SerializeField] private bool logPose = false;
 
+    private PassthroughCameraAccess cameraAccess;
     private int frameCount;
 
-    private void Reset()
+    private void Awake()
     {
-        // Convenience: auto-find a PassthroughCameraAccess in the scene if not assigned.
-        if (cameraAccess == null)
-        {
-            cameraAccess = FindFirstObjectByType<PassthroughCameraAccess>();
-        }
+        cameraAccess = GetComponent<MetaCameraProvider>().CameraAccess;
     }
 
     private void LateUpdate()
@@ -36,11 +27,7 @@ public class VuforiaCameraPoseDriver : MonoBehaviour
         {
             return;
         }
-
-        // GetCameraPose() returns the WORLD-space pose of the physical passthrough
-        // camera at the current image timestamp, including the lens offset (translation
-        // and tilt) relative to the head. SetPositionAndRotation sets the WORLD pose
-        // regardless of this object's parent.
+        // GetCameraPose() returns the WORLD-space pose of the physical passthrough cam
         Pose camPose = cameraAccess.GetCameraPose();
         transform.SetPositionAndRotation(camPose.position, camPose.rotation);
 

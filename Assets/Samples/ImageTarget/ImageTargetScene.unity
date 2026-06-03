@@ -446,7 +446,7 @@ GameObject:
   - component: {fileID: 712698825}
   - component: {fileID: 712698824}
   - component: {fileID: 712698823}
-  - component: {fileID: 712698822}
+  - component: {fileID: 712698826}
   m_Layer: 0
   m_Name: ImageTarget
   m_TagString: Untagged
@@ -454,25 +454,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &712698822
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 712698821}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mObserverBehaviour: {fileID: 712698824}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: green-goblin-target
-  mDatasetName: Vuforia/QuestVuforiaTargets.xml
-  mCastedBehaviour: {fileID: 712698824}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &712698823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -543,7 +524,7 @@ MonoBehaviour:
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 712698822}
+  mPreview: {fileID: 712698826}
 --- !u!4 &712698825
 Transform:
   m_ObjectHideFlags: 0
@@ -560,6 +541,25 @@ Transform:
   - {fileID: 543450652503012452}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &712698826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712698821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mObserverBehaviour: {fileID: 712698824}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: green-goblin-target
+  mDatasetName: Vuforia/QuestVuforiaTargets.xml
+  mCastedBehaviour: {fileID: 712698824}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1133,7 +1133,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1b707fa2c45bae4eb59c970234f314d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraAccess: {fileID: 1573155593}
   logPose: 0
 --- !u!114 &1331121218
 MonoBehaviour:

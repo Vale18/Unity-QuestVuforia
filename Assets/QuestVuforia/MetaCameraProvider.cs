@@ -15,6 +15,8 @@ public class MetaCameraProvider : MonoBehaviour
     [Header("Camera Access")]
     [SerializeField] private PassthroughCameraAccess cameraAccess;
 
+    public PassthroughCameraAccess CameraAccess => cameraAccess;
+
     [Header("Settings")]
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool flipImageVertically = true;
@@ -111,14 +113,7 @@ public class MetaCameraProvider : MonoBehaviour
             var intrinsics = cameraAccess.Intrinsics;
             var sensorRes = intrinsics.SensorResolution;
 
-            // Meta's intrinsics (FocalLength, PrincipalPoint) are expressed in the SENSOR frame
-            // (e.g. 1280x1280), NOT the current output resolution. The current resolution is a
-            // centered CROP of the sensor (and possibly a further scale), exactly as defined by
-            // Meta's PassthroughCameraAccess.CalcSensorCropRegion(). For 1280x960 from a 1280x1280
-            // sensor this means: full width, top/bottom 160px cropped, NO vertical downscale.
-            //
-            // Therefore the focal length must NOT be scaled by height/sensorHeight (a crop does not
-            // change pixels-per-radian). We mirror Meta's crop model to derive correct intrinsics:
+
             float sfX = (float)width / sensorRes.x;
             float sfY = (float)height / sensorRes.y;
             float norm = Mathf.Max(sfX, sfY);
@@ -130,9 +125,9 @@ public class MetaCameraProvider : MonoBehaviour
             float s = width / cropWidth;   // crop-region -> output scale (== height/cropHeight)
 
             float fx = intrinsics.FocalLength.x * s;
-            float fy = intrinsics.FocalLength.y * s;                       // NOT * (height/sensorHeight)
+            float fy = intrinsics.FocalLength.y * s;                       
             float cx = (intrinsics.PrincipalPoint.x - cropOffsetX) * s;
-            float cyImg = (intrinsics.PrincipalPoint.y - cropOffsetY) * s; // cy in output (unflipped) frame
+            float cyImg = (intrinsics.PrincipalPoint.y - cropOffsetY) * s; 
 
             cachedIntrinsics = new float[14];
             cachedIntrinsics[0] = width;
@@ -140,12 +135,9 @@ public class MetaCameraProvider : MonoBehaviour
             cachedIntrinsics[2] = fx;
             cachedIntrinsics[3] = fy;
             cachedIntrinsics[4] = cx;
-            // When the pixel buffer is flipped vertically (required for Vuforia detection),
-            // the principal point must be flipped to match: cy_flipped = height - cyImg.
-            cachedIntrinsics[5] = flipImageVertically ? (height - cyImg) : cyImg;
 
-            // Single-line logs: Unity's Android logging drops everything after embedded '\n',
-            // so multi-line Debug.Log calls show an empty body in logcat.
+            cachedIntrinsics[5] = flipImageVertically ? (height - cyImg) : cyImg;
+            
             Debug.Log($"[Quforia] RAW Meta: sensor={sensorRes.x}x{sensorRes.y} cur={width}x{height} " +
                 $"f=({intrinsics.FocalLength.x:F1},{intrinsics.FocalLength.y:F1}) " +
                 $"pp=({intrinsics.PrincipalPoint.x:F1},{intrinsics.PrincipalPoint.y:F1})");
@@ -155,17 +147,7 @@ public class MetaCameraProvider : MonoBehaviour
             Debug.Log($"[Quforia] Vuforia intr: fx={fx:F1} fy={fy:F1} cx={cx:F1} cy={cachedIntrinsics[5]:F1} " +
                 $"cropOff=({cropOffsetX:F0},{cropOffsetY:F0}) s={s:F3} flip={flipImageVertically} " +
                 $"(expect fy~=fx, cy~={height * 0.5f:F0})");
-
-            // DIAGNOSTIC: physical passthrough camera pose relative to the head node.
-            // The Quest passthrough camera is mounted/tilted away from the eye. If this
-            // rotation (esp. pitch around X) is non-trivial, and Vuforia places targets
-            // relative to the EYE anchor (not this camera), it produces a distance-growing
-            // angular offset -> block floats above the target.
-            var lensOffset = intrinsics.LensOffset;
-            Vector3 loEul = lensOffset.rotation.eulerAngles;
-            Debug.Log($"[Quforia] LensOffset (camera vs head): " +
-                $"pos=({lensOffset.position.x:F3},{lensOffset.position.y:F3},{lensOffset.position.z:F3}) " +
-                $"eul=({loEul.x:F1},{loEul.y:F1},{loEul.z:F1})");
+            
         }
         catch (Exception e)
         {
@@ -177,7 +159,9 @@ public class MetaCameraProvider : MonoBehaviour
     {
         while (isRunning)
         {
-            if (cameraAccess.IsPlaying)
+            // Only process when the camera delivered a new image (PCA: 60Hz),
+            // avoiding redundant pixel conversions and duplicate frames to Vuforia.
+            if (cameraAccess.IsPlaying && cameraAccess.IsUpdatedThisFrame)
             {
                 try
                 {
@@ -240,11 +224,6 @@ public class MetaCameraProvider : MonoBehaviour
         // Debug pose info
         if (showPoseDebug && frameCount % 30 == 0)
         {
-            // This component sits on the LeftEyeAnchor, which is ALSO the Vuforia AR camera
-            // (WorldCenterMode=CAMERA). Compare the physical passthrough camera pose against
-            // this eye/AR-camera transform: the delta is the camera->eye extrinsic that
-            // Vuforia does NOT account for. A non-trivial rotation delta (pitch) is the
-            // suspected cause of the distance-growing "floats above" offset.
             Quaternion deltaRot = Quaternion.Inverse(transform.rotation) * cameraPose.rotation;
             Vector3 deltaEul = deltaRot.eulerAngles;
             float deltaPos = Vector3.Distance(transform.position, cameraPose.position);
