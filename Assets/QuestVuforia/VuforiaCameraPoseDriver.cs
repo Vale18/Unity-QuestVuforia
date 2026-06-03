@@ -12,22 +12,16 @@ using UnityEngine;
 [DefaultExecutionOrder(100)]
 public class VuforiaCameraPoseDriver : MonoBehaviour
 {
-    [Tooltip("The PassthroughCameraAccess that provides the camera image fed to Vuforia. " +
-             "Must be the SAME instance/eye that MetaCameraProvider uses.")]
-    [SerializeField] private PassthroughCameraAccess cameraAccess;
-
     [Header("Debug")]
     [SerializeField] private bool logPose = false;
 
+    private PassthroughCameraAccess cameraAccess;
     private int frameCount;
 
-    private void Reset()
+    private void Awake()
     {
-        // Convenience: auto-find a PassthroughCameraAccess in the scene if not assigned.
-        if (cameraAccess == null)
-        {
-            cameraAccess = FindFirstObjectByType<PassthroughCameraAccess>();
-        }
+        // Shared reference: prefer the MetaCameraProvider on this GameObject, fall back to scene lookup.
+        cameraAccess = GetComponent<MetaCameraProvider>().CameraAccess;
     }
 
     private void LateUpdate()

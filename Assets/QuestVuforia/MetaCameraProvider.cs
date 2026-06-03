@@ -15,6 +15,10 @@ public class MetaCameraProvider : MonoBehaviour
     [Header("Camera Access")]
     [SerializeField] private PassthroughCameraAccess cameraAccess;
 
+    /// <summary>Single source of truth for the PassthroughCameraAccess used by the Quforia
+    /// components on this GameObject (read by VuforiaCameraPoseDriver and QuestVuforiaDriverInit).</summary>
+    public PassthroughCameraAccess CameraAccess => cameraAccess;
+
     [Header("Settings")]
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool flipImageVertically = true;
@@ -177,7 +181,9 @@ public class MetaCameraProvider : MonoBehaviour
     {
         while (isRunning)
         {
-            if (cameraAccess.IsPlaying)
+            // Only process when the camera delivered a new image (PCA: 60Hz),
+            // avoiding redundant pixel conversions and duplicate frames to Vuforia.
+            if (cameraAccess.IsPlaying && cameraAccess.IsUpdatedThisFrame)
             {
                 try
                 {
