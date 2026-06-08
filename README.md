@@ -3,9 +3,12 @@
 ![Status](https://img.shields.io/badge/Status-Work%20In%20Progress%20|%20Experimental-orange)
 
 An experimental Unity project integrating Vuforia Engine AR tracking with Meta Quest 3's passthrough cameras through a custom native driver implementation.
+## Image Target preview
 
 ![Demo](/Media/image-target-demo.gif)
 <img src="Media/image-tracking-correct.jpg" alt="Update" width="400">
+## Model Target preview
+![Demo 3D Model](/Media/model-target-game-controller.gif)
 ## Overview
 
 Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system by implementing a custom C++ plugin using the Vuforia Driver Framework. This enables AR image tracking directly on Quest's passthrough view without requiring external devices.
@@ -21,6 +24,7 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 ### Working
 
 - **Image Target Tracking**: Image recognition and 6DoF target pose functional, correctly aligned on the passthrough view
+- **Model Target Tracking**: Model recognition and pose recognition through trained target
 - **Camera Integration**: Quest passthrough camera frames fed to Vuforia with correct intrinsics
 - **Camera Pose Anchoring**: Target placement anchored to the physical passthrough camera pose (`GetCameraPose`), accounting for the camera-to-eye lens offset and tilt
 - **Real-time Processing**: Stable frame delivery and tracking updates
@@ -33,7 +37,7 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 - Resolution limited to 1280x960 instead of 1280x1280. Vuforia Driver Framework doesn't call start() when feeding a square image
 ### In Development
 
-- **Model Target Support**: Integration planned but not yet implemented
+- Device pose fusion
 ## Setup
 
 - Clone this project.
