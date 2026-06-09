@@ -15,10 +15,12 @@ public class MetaCameraProvider : MonoBehaviour
     [Header("Camera Access")]
     [SerializeField] private PassthroughCameraAccess cameraAccess;
 
+    public PassthroughCameraAccess CameraAccess => cameraAccess;
+
     [Header("Settings")]
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool flipImageVertically = true;
-    [SerializeField] private bool useCameraRotation = false;
+    [SerializeField] private bool useCameraRotation = true;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = false;
@@ -92,8 +94,8 @@ public class MetaCameraProvider : MonoBehaviour
         Log($"Camera initialized: Current={width}x{height}, Sensor={sensorRes.x}x{sensorRes.y}");
         if (width != sensorRes.x || height != sensorRes.y)
         {
-            Debug.LogWarning($"[Quforia] CurrentResolution ({width}x{height}) != SensorResolution ({sensorRes.x}x{sensorRes.y}). " +
-                           "Image may be cropped/scaled. This can cause tracking offset!");
+            Log($"CurrentResolution ({width}x{height}) is a crop of SensorResolution ({sensorRes.x}x{sensorRes.y}); " +
+                "crop offset is accounted for in SetupCameraIntrinsics().");
         }
 
         // Setup intrinsics
@@ -109,27 +111,43 @@ public class MetaCameraProvider : MonoBehaviour
         try
         {
             var intrinsics = cameraAccess.Intrinsics;
-
-            // The intrinsics from Meta are calibrated to SensorResolution
-            // But we're feeding CurrentResolution to Vuforia
-            // We need to scale the intrinsics if there's a resolution mismatch
             var sensorRes = intrinsics.SensorResolution;
-            float scaleX = (float)width / sensorRes.x;
-            float scaleY = (float)height / sensorRes.y;
+
+
+            float sfX = (float)width / sensorRes.x;
+            float sfY = (float)height / sensorRes.y;
+            float norm = Mathf.Max(sfX, sfY);
+            float cropScaleX = sfX / norm;
+            float cropScaleY = sfY / norm;
+            float cropOffsetX = sensorRes.x * (1f - cropScaleX) * 0.5f;
+            float cropOffsetY = sensorRes.y * (1f - cropScaleY) * 0.5f;
+            float cropWidth = sensorRes.x * cropScaleX;
+            float s = width / cropWidth;   // crop-region -> output scale (== height/cropHeight)
+
+            float fx = intrinsics.FocalLength.x * s;
+            float fy = intrinsics.FocalLength.y * s;                       
+            float cx = (intrinsics.PrincipalPoint.x - cropOffsetX) * s;
+            float cyImg = (intrinsics.PrincipalPoint.y - cropOffsetY) * s; 
 
             cachedIntrinsics = new float[14];
-            cachedIntrinsics[0] = width;  // Use actual frame width
-            cachedIntrinsics[1] = height; // Use actual frame height
-            cachedIntrinsics[2] = intrinsics.FocalLength.x * scaleX;  // Scale focal length
-            cachedIntrinsics[3] = intrinsics.FocalLength.y * scaleY;
-            cachedIntrinsics[4] = intrinsics.PrincipalPoint.x * scaleX;  // Scale principal point
-            cachedIntrinsics[5] = intrinsics.PrincipalPoint.y * scaleY;
-            // Distortion coefficients (6-13) remain 0 (Meta doesn't provide them)
+            cachedIntrinsics[0] = width;
+            cachedIntrinsics[1] = height;
+            cachedIntrinsics[2] = fx;
+            cachedIntrinsics[3] = fy;
+            cachedIntrinsics[4] = cx;
+
+            cachedIntrinsics[5] = flipImageVertically ? (height - cyImg) : cyImg;
+            
+            Debug.Log($"[Quforia] RAW Meta: sensor={sensorRes.x}x{sensorRes.y} cur={width}x{height} " +
+                $"f=({intrinsics.FocalLength.x:F1},{intrinsics.FocalLength.y:F1}) " +
+                $"pp=({intrinsics.PrincipalPoint.x:F1},{intrinsics.PrincipalPoint.y:F1})");
 
             QuestVuforiaBridge.SetCameraIntrinsics(cachedIntrinsics);
-            Log($"Intrinsics scaled: {width}x{height} (from {sensorRes.x}x{sensorRes.y}), " +
-                $"fx={cachedIntrinsics[2]:F1}, fy={cachedIntrinsics[3]:F1}, " +
-                $"cx={cachedIntrinsics[4]:F1}, cy={cachedIntrinsics[5]:F1}");
+
+            Debug.Log($"[Quforia] Vuforia intr: fx={fx:F1} fy={fy:F1} cx={cx:F1} cy={cachedIntrinsics[5]:F1} " +
+                $"cropOff=({cropOffsetX:F0},{cropOffsetY:F0}) s={s:F3} flip={flipImageVertically} " +
+                $"(expect fy~=fx, cy~={height * 0.5f:F0})");
+            
         }
         catch (Exception e)
         {
@@ -141,7 +159,9 @@ public class MetaCameraProvider : MonoBehaviour
     {
         while (isRunning)
         {
-            if (cameraAccess.IsPlaying)
+            // Only process when the camera delivered a new image (PCA: 60Hz),
+            // avoiding redundant pixel conversions and duplicate frames to Vuforia.
+            if (cameraAccess.IsPlaying && cameraAccess.IsUpdatedThisFrame)
             {
                 try
                 {
@@ -204,9 +224,13 @@ public class MetaCameraProvider : MonoBehaviour
         // Debug pose info
         if (showPoseDebug && frameCount % 30 == 0)
         {
-            Debug.Log($"[Quforia] Camera Pose: pos=({cameraPose.position.x:F3}, {cameraPose.position.y:F3}, {cameraPose.position.z:F3}), " +
-                     $"rot=({cameraPose.rotation.x:F3}, {cameraPose.rotation.y:F3}, {cameraPose.rotation.z:F3}, {cameraPose.rotation.w:F3}), " +
-                     $"useCameraRotation={useCameraRotation}");
+            Quaternion deltaRot = Quaternion.Inverse(transform.rotation) * cameraPose.rotation;
+            Vector3 deltaEul = deltaRot.eulerAngles;
+            float deltaPos = Vector3.Distance(transform.position, cameraPose.position);
+            Debug.Log($"[Quforia] CAM vs EYE: " +
+                     $"camPos=({cameraPose.position.x:F3},{cameraPose.position.y:F3},{cameraPose.position.z:F3}) " +
+                     $"eyePos=({transform.position.x:F3},{transform.position.y:F3},{transform.position.z:F3}) " +
+                     $"deltaPos={deltaPos:F3}m deltaRotEul=({deltaEul.x:F1},{deltaEul.y:F1},{deltaEul.z:F1})");
         }
 
         // Feed to Vuforia (pose first, then frame with same timestamp)

@@ -49,7 +49,6 @@ bool QuestExternalTracker::close() {
     LOGI("close()");
 
     if (!isOpen_) {
-        LOGD("Tracker already closed");
         return true;
     }
 
@@ -99,7 +98,6 @@ bool QuestExternalTracker::stop() {
     LOGI("stop()");
 
     if (!isRunning_) {
-        LOGD("Tracker not running");
         return true;
     }
 
@@ -175,13 +173,6 @@ void QuestExternalTracker::poseDeliveryThread() {
 
                     lastPoseTimestamp_ = frameTimestamp;
                     poseCount++;
-
-                    if (poseCount % 30 == 0) {
-                        LOGD("Delivered %d poses (latest timestamp: %lld)",
-                             poseCount, (long long)frameTimestamp);
-                    }
-                } else {
-                    LOGD("No pose available for timestamp %lld", (long long)frameTimestamp);
                 }
             }
         }
@@ -238,18 +229,20 @@ void QuestExternalTracker::transformOpenXRToCV(const float* positionIn, const fl
     float qz = rotationIn[2];
     float qw = rotationIn[3];
 
-    // Apply 180-degree rotation around X-axis to flip Y and Z
-    // This is equivalent to: R_cv = R_x(180°) * R_openxr
-    // R_x(180°) = [1, 0, 0; 0, -1, 0; 0, 0, -1]
-
-    // Transform the quaternion
-    // q' = q_x(180°) * q_openxr
-    // q_x(180°) = (1, 0, 0, 0) - represents 180° rotation around X
+    // Apply 180-degree rotation around X-axis to flip Y and Z axes.
+    // q' = q_openxr * q_x(180°)  [POST-multiply: apply 180° in local camera space]
+    // q_x(180°) = (x=1, y=0, z=0, w=0)
+    // Hamilton product q1=(qx,qy,qz,qw) * q2=(1,0,0,0):
+    //   x' = qw*1 + qx*0 + qy*0 - qz*0 = qw
+    //   y' = qw*0 - qx*0 + qy*0 + qz*1 = qz
+    //   z' = qw*0 + qx*0 - qy*1 + qz*0 = -qy
+    //   w' = qw*0 - qx*1 - qy*0 - qz*0 = -qx
+    //
     float transformedQuat[4];
-    transformedQuat[0] = qw;   // x' = w (from quaternion multiplication)
-    transformedQuat[1] = -qz;  // y' = -z
-    transformedQuat[2] = -qy;  // z' = -y
-    transformedQuat[3] = qx;   // w' = x
+    transformedQuat[0] = qw;   // x' = qw
+    transformedQuat[1] = qz;   // y' = +qz
+    transformedQuat[2] = -qy;  // z' = -qy
+    transformedQuat[3] = -qx;  // w' = -qx
 
     // Convert transformed quaternion to 3x3 rotation matrix (row-major)
     quaternionToMatrix(transformedQuat, rotationOut);
