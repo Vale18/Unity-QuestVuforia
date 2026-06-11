@@ -192,13 +192,14 @@ public class MetaCameraProvider : MonoBehaviour
         // Get camera frame pixels
         NativeArray<Color32> pixels = cameraAccess.GetColors();
 
-        if (!pixels.IsCreated || pixels.Length != width * height)
+        int pixelCount = width * height;
+        if (!pixels.IsCreated || pixels.Length < pixelCount)
         {
             return;
         }
 
-        // Convert Color32 to RGB888
-        for (int i = 0; i < pixels.Length; i++)
+        // Convert Color32 to RGB888 (only the valid leading pixelCount pixels)
+        for (int i = 0; i < pixelCount; i++)
         {
             int rgbIndex = i * 3;
             Color32 pixel = pixels[i];

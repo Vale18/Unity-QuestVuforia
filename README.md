@@ -15,9 +15,9 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 
 **Built With:**
 
-- Unity 6000.0.61f1
+- Unity 6000.3.17f1
 - Vuforia Engine 11.4.4 (Driver Framework/External Camera API)
-- Meta XR SDK 81.0.0
+- Meta XR SDK 203.0.0 (Core + MR Utility Kit)
 
 ## Current State
 
@@ -54,7 +54,7 @@ Quforia bridges Vuforia Engine 11.4.4 with Meta Quest passthrough camera system 
 - Find the `GameObject` called `ImageTarget`.
 - Modify the `Database` param within `ImageTargetBehaviour` component and look for your database.
 - Locate your Image Target in the dropdown below.
-- Run sample in your headset. **Model Target Sample**
+- Run sample in your headset. **Image Target Sample**
 - After the permission prompt restart the app to make the tracking work (only on first install)
 
 
@@ -92,14 +92,14 @@ cd QuforiaPlugin
 
 ### Unity Project
 
-1. Open in Unity 6000.0.61f1
+1. Open in Unity 6000.3.17f1
 2. File → Build Settings → Android
 3. Build and Run to Quest 3
 
 ## Requirements
 
-- Meta SDK 81
-- Unity 6000.0.61f1
+- Meta SDK 203
+- Unity 6000.3.17f1
 - Vuforia Engine license (free development license available)
 
 ## Project Structure
